@@ -1,0 +1,13 @@
+{
+  "name": "dockerised-web-app",
+  "version": "1.0.0",
+  "description": "Sample web app containerised with Docker and deployed via Azure DevOps CI/CD to Azure Container Registry",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
