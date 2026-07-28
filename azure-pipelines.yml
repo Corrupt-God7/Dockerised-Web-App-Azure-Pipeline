@@ -1,15 +1,6 @@
 # azure-pipelines.yml
 # CI/CD pipeline: builds a Docker image from this repo and pushes it to
-# Azure Container Registry (ACR). Optionally deploys to Azure App Service
-# for Containers in a second stage.
-#
-# Prerequisites (set these up once in Azure DevOps before running):
-#   1. An Azure Container Registry (ACR) instance.
-#   2. A Docker Registry service connection in Azure DevOps
-#      (Project Settings > Service connections > New > Docker Registry > Azure Container Registry)
-#      pointing at your ACR. Note its name and put it in `dockerRegistryServiceConnection` below.
-#   3. (Optional, for the deploy stage) An Azure Resource Manager service
-#      connection and an existing Azure Web App for Containers.
+# Docker Hub.
 
 trigger:
   branches:
@@ -20,23 +11,14 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  # -- Update these for your environment --
-  dockerRegistryServiceConnection: 'acr-service-connection'   # name of the Docker Registry service connection
-  imageRepository: 'dockerised-web-app'                       # repo name inside ACR
-  containerRegistry: 'myregistry.azurecr.io'                  # your ACR login server
+  dockerRegistryServiceConnection: 'dockerhub-connection'
+  imageRepository: 'corruptgod/dockerised-web-app'
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
   tag: '$(Build.BuildId)'
 
-  # -- Optional deploy stage settings --
-  azureSubscriptionServiceConnection: 'azure-arm-service-connection'
-  webAppName: 'my-dockerised-webapp'
-
 stages:
-  # ---------------------------------------------------------------------
-  # Stage 1: Build image and push it to Azure Container Registry
-  # ---------------------------------------------------------------------
   - stage: BuildAndPush
-    displayName: Build and push image to ACR
+    displayName: Build and push image to Docker Hub
     jobs:
       - job: Build
         displayName: Build & Push Docker image
@@ -53,28 +35,5 @@ stages:
                 latest
 
           - script: |
-              echo "Image pushed: $(containerRegistry)/$(imageRepository):$(tag)"
+              echo "Image pushed: docker.io/$(imageRepository):$(tag)"
             displayName: Print pushed image reference
-
-  # ---------------------------------------------------------------------
-  # Stage 2 (optional): Deploy the newly pushed image to an Azure Web App
-  # for Containers. Remove this stage if you only need image publishing.
-  # ---------------------------------------------------------------------
-  - stage: DeployToAzure
-    displayName: Deploy to Azure Web App for Containers
-    dependsOn: BuildAndPush
-    condition: succeeded()
-    jobs:
-      - deployment: Deploy
-        displayName: Deploy container to App Service
-        environment: 'production'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - task: AzureWebAppContainer@1
-                  displayName: Deploy image to Azure Web App
-                  inputs:
-                    azureSubscription: '$(azureSubscriptionServiceConnection)'
-                    appName: '$(webAppName)'
-                    containers: '$(containerRegistry)/$(imageRepository):$(tag)'
