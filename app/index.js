@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
   res.json({
-    message: 'Hello from a Dockerised Web App deployed via Azure DevOps CI/CD!',
+    message: 'Hello from a Dockerised Web App deployed via Azure DevOps CI/CD! (,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,)',
     hostname: os.hostname(),
     timestamp: new Date().toISOString(),
     version: process.env.APP_VERSION || 'local'
