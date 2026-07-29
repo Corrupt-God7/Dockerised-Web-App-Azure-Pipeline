@@ -1,13 +1,17 @@
 {
   "name": "dockerised-web-app",
   "version": "1.0.0",
-  "description": "Sample web app containerised with Docker and deployed via Azure DevOps CI/CD to Azure Container Registry",
+  "description": "Sample web app containerised with Docker and deployed via Azure DevOps CI/CD to Docker Hub",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "jest --ci"
   },
   "dependencies": {
     "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
   }
 }

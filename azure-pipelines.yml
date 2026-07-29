@@ -1,6 +1,16 @@
 # azure-pipelines.yml
-# CI/CD pipeline: builds a Docker image from this repo and pushes it to
-# Docker Hub.
+# Full CI/CD pipeline: runs automated tests, builds a Docker image and
+# pushes it to Docker Hub, then triggers a live deployment on Render.
+#
+# Prerequisites:
+#   1. Docker Hub account + access token, wired up as the
+#      'dockerhub-connection' service connection in this project.
+#   2. A Render Web Service connected to this repo, with "Auto-Deploy"
+#      turned OFF (so Render only deploys when THIS pipeline tells it to,
+#      not on every push by itself).
+#   3. A pipeline variable named RENDER_DEPLOY_HOOK_URL (mark it "secret"),
+#      set to your Render service's Deploy Hook URL
+#      (Render dashboard -> your service -> Settings -> Deploy Hook).
 
 trigger:
   branches:
@@ -17,8 +27,37 @@ variables:
   tag: '$(Build.BuildId)'
 
 stages:
+  # ---------------------------------------------------------------------
+  # Stage 1: Run automated tests
+  # ---------------------------------------------------------------------
+  - stage: Test
+    displayName: Run automated tests
+    jobs:
+      - job: RunTests
+        displayName: Install dependencies and run tests
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '20.x'
+            displayName: Install Node.js
+
+          - script: |
+              cd app
+              npm install
+            displayName: Install dependencies
+
+          - script: |
+              cd app
+              npm test
+            displayName: Run tests
+
+  # ---------------------------------------------------------------------
+  # Stage 2: Build image and push it to Docker Hub (only if tests passed)
+  # ---------------------------------------------------------------------
   - stage: BuildAndPush
     displayName: Build and push image to Docker Hub
+    dependsOn: Test
+    condition: succeeded()
     jobs:
       - job: Build
         displayName: Build & Push Docker image
@@ -34,6 +73,17 @@ stages:
                 $(tag)
                 latest
 
+  # ---------------------------------------------------------------------
+  # Stage 3: Deploy to Render (only if build/push succeeded)
+  # ---------------------------------------------------------------------
+  - stage: Deploy
+    displayName: Deploy to Render
+    dependsOn: BuildAndPush
+    condition: succeeded()
+    jobs:
+      - job: TriggerRenderDeploy
+        displayName: Trigger Render deploy hook
+        steps:
           - script: |
-              echo "Image pushed: docker.io/$(imageRepository):$(tag)"
-            displayName: Print pushed image reference
+              curl -X POST "$(RENDER_DEPLOY_HOOK_URL)"
+            displayName: Call Render deploy hook

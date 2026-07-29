@@ -18,6 +18,11 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy' });
 });
 
-app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}`);
-});
+// Only start listening if this file is run directly (not when imported by tests)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`App listening on port ${PORT}`);
+  });
+}
+
+module.exports = app;
